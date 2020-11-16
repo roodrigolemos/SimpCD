@@ -9,6 +9,9 @@ import UIKit
 
 class ViewController: UIViewController {
     
+    var dates: [MonthYear] = []
+    var countToGoToCurrentMonth = 0
+    
     let expenses: [Expense] = [Expense(name: "Netflix", value: "25,00", date: "29/10"),
                                Expense(name: "Sorvete", value: "10,00", date: "29/10"),
                                Expense(name: "Lets Build That App", value: "25", date: "29/10"),
@@ -30,11 +33,35 @@ class ViewController: UIViewController {
         monthCollectionView.delegate = self
         expensesTableView.dataSource = self
         expensesTableView.delegate = self
+        
+        for year in 1920...2120 {
+            for month in Month.allCases {
+                let date = MonthYear(month: month, year: year)
+                dates.append(date)
+            }
+        }
+        
+        for date in dates {
+            let currentDate = Date()
+            let currentMonthInt = currentDate.getCurrentMonth()
+            let currentYear = currentDate.getCurrentYear()
+            let currentMonthEnum = currentDate.monthIntToEnum(monthInInt: currentMonthInt)
+            if date.year == currentYear && date.month == currentMonthEnum {
+                break
+            }
+            countToGoToCurrentMonth += 1
+        }
+    }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        scrollToPosition()
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
+        scrollToPosition()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -57,12 +84,22 @@ extension ViewController: UITableViewDataSource, UITableViewDelegate {
 
 extension ViewController: UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return 3
+        return dates.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = monthCollectionView.dequeueReusableCell(withReuseIdentifier: "monthCell", for: indexPath)
+        let cell = monthCollectionView.dequeueReusableCell(withReuseIdentifier: "monthCell", for: indexPath) as! MonthCollectionViewCell
+        cell.date = dates[indexPath.item]
         return cell
     }
+    
+    func scrollToPosition() {
+        monthCollectionView.isPagingEnabled = false
+        let desiredPosition = IndexPath(item: countToGoToCurrentMonth, section: 0)
+        self.monthCollectionView.scrollToItem(at: desiredPosition, at: .centeredHorizontally, animated: false)
+        self.monthCollectionView.layoutIfNeeded()
+        monthCollectionView.isPagingEnabled = true
+    }
+    
 }
 
